@@ -126,18 +126,6 @@ Port is mapped to `8082` by default (to avoid conflicts with the N-able export o
 
 ---
 
-## Running Alongside Other Tools
-
-Port mapping defaults:
-
-| Tool | Port |
-|---|---|
-| Emerald Monitor | 8080 |
-| N-able Device Export | 8081 |
-| **Sophos Device Export** | **8082** |
-
----
-
 ## Troubleshooting
 
 **Tenant list won't load**
