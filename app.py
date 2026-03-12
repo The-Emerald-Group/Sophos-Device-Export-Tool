@@ -31,9 +31,11 @@ SOPHOS_AUTH_URL      = "https://id.sophos.com/api/v2/oauth2/token"
 SOPHOS_WHOAMI_URL    = "https://api.central.sophos.com/whoami/v1"
 SOPHOS_GLOBAL_URL    = "https://api.central.sophos.com"
 
-CACHE_FILE   = "tenants_cache.json"
-CACHE_TTL    = 300          # 5 minutes
+CACHE_FILE   = "data/cache.json"
+CACHE_TTL    = 86400        # 24 hours
 REQUEST_DELAY = 0.1         # small delay between per-tenant calls
+
+os.makedirs("data", exist_ok=True)
 
 cache_lock   = threading.Lock()
 token_lock   = threading.Lock()
@@ -163,10 +165,10 @@ def fetch_all_tenants(token, partner_id):
     return tenants
 
 
-def get_tenants_list():
+def get_tenants_list(force=False):
     """Return cached or freshly fetched tenant list."""
     with cache_lock:
-        if os.path.exists(CACHE_FILE):
+        if not force and os.path.exists(CACHE_FILE):
             try:
                 with open(CACHE_FILE, "r") as f:
                     cached = json.load(f)
@@ -550,6 +552,14 @@ class Handler(BaseHTTPRequestHandler):
                 self._json(200, {"customers": [t["name"] for t in tenants]})
             except Exception as e:
                 log(f"Customer fetch error: {e}\n{traceback.format_exc()}")
+                self._json(500, {"error": str(e)})
+
+        elif path == "/api/sync-customers":
+            try:
+                items = get_tenants_list(force=True)
+                self._json(200, {"customers": [t["name"] for t in items]})
+            except Exception as e:
+                log(f"Sync error: {e}\n{traceback.format_exc()}")
                 self._json(500, {"error": str(e)})
 
         elif path == "/api/export":
