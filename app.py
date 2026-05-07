@@ -62,6 +62,7 @@ ALL_COLUMNS = [
     ("tamper_protection",  "Tamper Protection",     "Security"),
     ("endpoint_version",   "Sophos Version",        "Security"),
     ("serial_number",      "Serial Number",         "Hardware"),
+    ("last_user",          "Last User",             "Activity"),
     ("last_seen",          "Last Seen",             "Activity"),
     ("registered_at",      "Registered At",         "Activity"),
     ("cloud_provider",     "Cloud Provider",        "Activity"),
@@ -75,7 +76,7 @@ DEFAULT_COLUMNS = [
     "hostname", "endpoint_type", "customer", "group_name",
     "ip_addresses", "os_name", "os_version",
     "health_overall", "health_threats", "health_services",
-    "tamper_protection", "last_seen",
+    "tamper_protection", "last_user", "last_seen",
 ]
 
 
@@ -285,6 +286,7 @@ def extract_fields(ep):
     macs      = ep.get("macAddresses", []) or []
     assigned  = ep.get("assignedProducts", []) or []
     cloud     = ep.get("cloud", {}) or {}
+    last_user = ep.get("lastUser") or {}
 
     # Find Intercept X / Endpoint version
     ep_version = "N/A"
@@ -312,6 +314,7 @@ def extract_fields(ep):
         "tamper_protection": "Enabled" if tamper is True else ("Disabled" if tamper is False else "N/A"),
         "endpoint_version":  ep_version,
         "serial_number":     safe(ep.get("serialNumber")),
+        "last_user":         safe(last_user.get("name")),
         "last_seen":         fmt_dt(ep.get("lastSeenAt")),
         "registered_at":     fmt_dt(ep.get("registeredAt")),
         "cloud_provider":    safe(cloud.get("provider")),
@@ -442,6 +445,7 @@ def generate_pdf(rows, selected_columns, customer_name):
         "os_name":         2.2, "os_version":    1.2, "endpoint_version": 1.4,
         "health_overall":  1.2, "health_threats":1.2, "health_services":  1.2,
         "last_seen":       1.6, "registered_at": 1.6, "serial_number": 1.6,
+        "last_user":       1.8,
     }
     weights    = [weight_map.get(k, 1.2) for k in selected_columns]
     col_widths = [usable_w * (w / sum(weights)) for w in weights]
