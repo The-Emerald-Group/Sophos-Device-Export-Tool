@@ -245,7 +245,8 @@ def fetch_tenant_endpoints(tenant, token):
             item["_tenant_name"] = tenant["name"]
             item["_data_region"] = tenant.get("dataRegion", "")
         endpoints.extend(items)
-
+        if items and not endpoints:
+            log(f"DEBUG RAW: {json.dumps(items[0], indent=2)}")
         next_key = body.get("pages", {}).get("nextKey")
         if next_key:
             url    = f"{api_host}/endpoint/v1/endpoints"
