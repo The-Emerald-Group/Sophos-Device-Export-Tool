@@ -245,8 +245,11 @@ def fetch_tenant_endpoints(tenant, token):
             item["_tenant_name"] = tenant["name"]
             item["_data_region"] = tenant.get("dataRegion", "")
         endpoints.extend(items)
-        if items and not endpoints:
-            log(f"DEBUG RAW: {json.dumps(items[0], indent=2)}")
+
+        # ── DEBUG: log the raw first endpoint so we can inspect field names ──
+        if items and len(endpoints) == len(items):  # first page only
+            log(f"DEBUG RAW ENDPOINT: {json.dumps(items[0], indent=2)}")
+
         next_key = body.get("pages", {}).get("nextKey")
         if next_key:
             url    = f"{api_host}/endpoint/v1/endpoints"
@@ -287,7 +290,15 @@ def extract_fields(ep):
     macs      = ep.get("macAddresses", []) or []
     assigned  = ep.get("assignedProducts", []) or []
     cloud     = ep.get("cloud", {}) or {}
-    last_user = ep.get("lastUser") or {}
+    last_user_raw = ep.get("lastUser")
+
+    # Handle lastUser whether it's a dict, string, or missing
+    if isinstance(last_user_raw, dict):
+        last_user = safe(last_user_raw.get("name") or last_user_raw.get("username"))
+    elif isinstance(last_user_raw, str):
+        last_user = safe(last_user_raw)
+    else:
+        last_user = "N/A"
 
     # Find Intercept X / Endpoint version
     ep_version = "N/A"
@@ -315,7 +326,7 @@ def extract_fields(ep):
         "tamper_protection": "Enabled" if tamper is True else ("Disabled" if tamper is False else "N/A"),
         "endpoint_version":  ep_version,
         "serial_number":     safe(ep.get("serialNumber")),
-        "last_user":         safe(last_user.get("name")),
+        "last_user":         last_user,
         "last_seen":         fmt_dt(ep.get("lastSeenAt")),
         "registered_at":     fmt_dt(ep.get("registeredAt")),
         "cloud_provider":    safe(cloud.get("provider")),
