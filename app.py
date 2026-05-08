@@ -290,11 +290,15 @@ def extract_fields(ep):
     macs      = ep.get("macAddresses", []) or []
     assigned  = ep.get("assignedProducts", []) or []
     cloud     = ep.get("cloud", {}) or {}
-    last_user_raw = ep.get("lastUser")
+    # Try lastUser first, fall back to associatedPerson
+    last_user_raw = ep.get("lastUser") or ep.get("associatedPerson")
 
-    # Handle lastUser whether it's a dict, string, or missing
     if isinstance(last_user_raw, dict):
-        last_user = safe(last_user_raw.get("name") or last_user_raw.get("username"))
+        last_user = safe(
+            last_user_raw.get("name")
+            or last_user_raw.get("viaLogin")
+            or last_user_raw.get("username")
+        )
     elif isinstance(last_user_raw, str):
         last_user = safe(last_user_raw)
     else:
